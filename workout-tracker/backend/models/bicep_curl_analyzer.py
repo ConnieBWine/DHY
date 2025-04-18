@@ -65,8 +65,9 @@ class BicepCurlAnalyzer(ExerciseAnalyzer):
         self.max_elbow_angle = 0
         self.start_hip_shoulder_angle = None
         self.max_swing_angle = 0
-        self.elbow_angle_buffer.clear()
-    
+        if hasattr(self, 'elbow_angle_buffer'):
+            self.elbow_angle_buffer.clear()    
+            
     def calculate_exercise_angles(self, keypoints: Dict[str, List[float]]) -> Dict[str, float]:
         """
         Calculate angles relevant for bicep curl analysis

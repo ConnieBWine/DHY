@@ -1,12 +1,13 @@
-from fastapi import APIRouter, HTTPException, Body
+from utils.video_processor import VideoProcessor # Assuming utils is sibling to api
+from utils.workout_extractor import WorkoutExtractor # Assuming utils is sibling to api
+from config import settings             # Assuming config.py is sibling to api
+
+# --- Original Imports ---
+from fastapi import APIRouter, HTTPException, Body, Depends
 from typing import Dict, List, Optional
 import google.generativeai as genai
 import logging
 from pydantic import BaseModel
-
-from utils.workout_extractor import WorkoutExtractor
-from config import settings
-
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,8 +21,13 @@ except Exception as e:
     logger.error(f"Failed to initialize Gemini AI in routes: {e}")
     model = None
 
-# Initialize workout extractor
-workout_extractor = WorkoutExtractor(settings.GEMINI_API_KEY)
+# Initialize workout extractor (Consider initializing only once in main.py)
+try:
+    workout_extractor = WorkoutExtractor(settings.GEMINI_API_KEY)
+    logger.info("WorkoutExtractor initialized in routes")
+except Exception as e:
+     logger.error(f"Failed to initialize WorkoutExtractor in routes: {e}")
+     workout_extractor = None # Ensure it's None if init fails
 
 # Create API router
 router = APIRouter()
@@ -155,7 +161,29 @@ async def get_available_exercises():
 async def health_check():
     """Health check endpoint"""
     return {"status": "ok", "api": "running"}
-    
+
+@router.get("/session-stats", 
+            summary="Get workout session statistics", 
+            response_description="Returns common issues and exercise-specific feedback counts")
+async def get_session_stats_route():
+    """
+    Retrieves statistics collected during the current workout session,
+    including common form issues across all exercises and per exercise.
+    """
+    try:
+        # Access the video_processor instance imported from main.py
+        if video_processor:
+            stats = video_processor.get_session_stats()
+            logger.info(f"Retrieved session stats: {stats}")
+            return stats
+        else:
+            logger.error("Video processor instance not available in session-stats route.")
+            raise HTTPException(status_code=500, detail="Video processor not initialized")
+    except Exception as e:
+        logger.error(f"Error getting session stats: {e}", exc_info=True) # Log traceback
+        raise HTTPException(status_code=500, detail="Failed to retrieve session statistics")   
+
+
 # Helper functions
 def create_workout_prompt(survey_data: SurveyData) -> str:
     """Create AI prompt from survey data"""
