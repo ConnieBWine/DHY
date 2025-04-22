@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings"""
     APP_NAME: str = "WorkoutTracker"
-    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", "AIzaSyCBTS5O0OLsHbNkcltw1mvKVlXBmHcVBeQ")
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", "")
     MODEL_NAME: str = "gemini-2.0-flash"
     POSE_DETECTION_CONFIDENCE: float = 0.6
     POSE_TRACKING_CONFIDENCE: float = 0.6
